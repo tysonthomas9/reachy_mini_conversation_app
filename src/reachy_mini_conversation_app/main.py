@@ -63,6 +63,8 @@ def run(
             robot_kwargs = {}
             if args.robot_name is not None:
                 robot_kwargs["robot_name"] = args.robot_name
+            if args.no_camera:
+                robot_kwargs["media_backend"] = "default_no_video"
 
             logger.info("Initializing ReachyMini (SDK will auto-detect appropriate backend)")
             robot = ReachyMini(**robot_kwargs)

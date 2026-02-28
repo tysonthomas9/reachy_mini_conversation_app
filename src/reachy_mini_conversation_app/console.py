@@ -23,6 +23,7 @@ from scipy.signal import resample
 from reachy_mini import ReachyMini
 from reachy_mini.media.media_manager import MediaBackend
 from reachy_mini_conversation_app.config import LOCKED_PROFILE, config
+from reachy_mini_conversation_app.bridge_api import BridgeState, mount_bridge_routes
 from reachy_mini_conversation_app.openai_realtime import OpenaiRealtimeHandler
 from reachy_mini_conversation_app.headless_personality_ui import mount_personality_routes
 
@@ -70,6 +71,8 @@ class LocalStream:
         self._instance_path: Optional[str] = instance_path
         self._settings_initialized = False
         self._asyncio_loop = None
+        self._bridge_state = BridgeState(secret=os.environ.get("REACHY_BRIDGE_SECRET"))
+        self._bridge_standalone = False
 
     # ---- Settings UI (only when API key is missing) ----
     def _read_env_lines(self, env_path: Path) -> list[str]:
@@ -374,6 +377,16 @@ class LocalStream:
         self._robot.media.start_playing()
         time.sleep(1)  # give some time to the pipelines to start
 
+        # If no settings_app was provided, create a minimal one for bridge routes
+        if self._settings_app is None:
+            try:
+                self._settings_app = FastAPI()
+                self._bridge_standalone = True
+            except Exception:
+                self._bridge_standalone = False
+        else:
+            self._bridge_standalone = False
+
         async def runner() -> None:
             # Capture loop for cross-thread personality actions
             loop = asyncio.get_running_loop()
@@ -390,6 +403,30 @@ class LocalStream:
                     )
             except Exception:
                 pass
+            try:
+                if self._settings_app is not None:
+                    mount_bridge_routes(
+                        self._settings_app,
+                        self.handler,
+                        lambda: self._asyncio_loop,
+                        self._bridge_state,
+                    )
+            except Exception:
+                pass
+            # Start standalone bridge server if needed
+            if self._bridge_standalone and self._settings_app is not None:
+                import threading
+
+                import uvicorn
+
+                bridge_port = int(os.environ.get("REACHY_BRIDGE_PORT", "8100"))
+
+                def _serve() -> None:
+                    uvicorn.run(self._settings_app, host="0.0.0.0", port=bridge_port, log_level="warning")
+
+                t = threading.Thread(target=_serve, daemon=True)
+                t.start()
+                logger.info("Bridge API server started on port %d", bridge_port)
             self._tasks = [
                 asyncio.create_task(self.handler.start_up(), name="openai-handler"),
                 asyncio.create_task(self.record_loop(), name="stream-record-loop"),
@@ -469,6 +506,16 @@ class LocalStream:
                             "role=%s content=%s",
                             msg.get("role"),
                             content if len(content) < 500 else content[:500] + "…",
+                        )
+                        asyncio.create_task(
+                            self._bridge_state.broadcast(
+                                {
+                                    "type": "transcript",
+                                    "role": msg.get("role"),
+                                    "content": content,
+                                    "timestamp": time.time(),
+                                }
+                            )
                         )
 
             elif isinstance(handler_output, tuple):
