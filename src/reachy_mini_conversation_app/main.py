@@ -174,6 +174,8 @@ def run(
             settings_app=settings_app,
             instance_path=instance_path,
         )
+        # Wire bridge_state so tools (e.g. ask_openclaw) can broadcast over the bridge
+        deps.bridge_state = stream_manager._bridge_state
 
     # Each async service → its own thread/loop
     movement_manager.start()
