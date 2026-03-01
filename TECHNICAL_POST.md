@@ -12,8 +12,8 @@ We built this during a hackathon, connecting [Reachy Mini](https://www.pollen-ro
 ┌──────────────────────────┐         ┌──────────────────────────┐
 │     REACHY MINI          │         │       OPENCLAW           │
 │                          │         │                          │
-│  OpenAI Realtime API     │◄──────► │  Personal AI Assistant    │
-│  (gpt-realtime-1.5)     │  Bridge │  (configurable model)   │
+│  OpenAI Realtime API     │◄──────► │  Personal AI Assistant   │
+│  (gpt-realtime-1.5)      │  Bridge │  (configurable model)    │
 │                          │   API   │                          │
 │  Voice in/out            │         │  Multi-channel gateway   │
 │  Robot head movement     │         │  Browser tools           │
