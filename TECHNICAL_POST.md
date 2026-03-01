@@ -200,6 +200,15 @@ Check for `Transcript WebSocket connected` in OpenClaw logs and `Bridge WS clien
 
 You don't need one agent that does everything. Two specialized agents with a simple bridge covered more ground than we expected. The agents don't understand each other's internals at all. They just pass transcripts, inject messages, and delegate tasks. That turned out to be enough.
 
+## Code and setup
+
+The full implementation is across two repos:
+
+- **OpenClaw extension** (bridge plugin, hooks, task reception): [openclaw/openclaw — feature/reachy-mini-extension](https://github.com/openclaw/openclaw/compare/main...tysonthomas9:openclaw:feature/reachy-mini-extension)
+- **Reachy conversation app** (bridge API, ask_openclaw tool, prompts): [pollen-robotics/reachy_mini_conversation_app — feature/openclaw-bridge](https://github.com/pollen-robotics/reachy_mini_conversation_app/compare/develop...tysonthomas9:reachy_mini_conversation_app:feature/openclaw-bridge)
+
+Setup instructions are in the [ARCHITECTURE.md](https://github.com/openclaw/openclaw/compare/main...tysonthomas9:openclaw:feature/reachy-mini-extension#diff-extensions/reachy-mini/ARCHITECTURE.md) in the OpenClaw extension.
+
 ---
 
 *When we say "we" in this post, we mean me (Tyson) and Claude Opus. The code, architecture, debugging, and this writeup were all pair-programmed with Claude.*
